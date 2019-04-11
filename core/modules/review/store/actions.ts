@@ -11,6 +11,7 @@ import rootStore from '@vue-storefront/core/store'
 import Review from '@vue-storefront/core/modules/review/types/Review'
 import { ReviewRequest } from '@vue-storefront/core/modules/review/types/ReviewRequest'
 import { Logger } from '@vue-storefront/core/lib/logger'
+import { TaskQueue } from '@vue-storefront/core/lib/sync'
 
 const actions: ActionTree<ReviewState, RootState> = {
   /**
@@ -63,14 +64,19 @@ const actions: ActionTree<ReviewState, RootState> = {
     }
 
     try {
-      await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(review)
+      await TaskQueue.queue({
+        url: url,
+        payload: {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json, text/plain, */*',
+            'Content-Type': 'application/json'
+          },
+          mode: 'cors',
+          body: JSON.stringify(review)
+        }
       })
+
       Vue.prototype.$bus.$emit('notification-progress-stop')
       rootStore.dispatch('notification/spawnNotification', {
         type: 'success',
